@@ -86,6 +86,28 @@ body.play-mode #canvas {
   /* centering handled by JS centerCanvasX() — keep single source of truth */
 }
 
+/* Opaque backdrop behind the fixed header so scrolling canvas content
+   disappears under it instead of showing through. Sits above #canvas
+   (z-index:2, in DOM after it) but below the hero (z-index:3). Inherits the
+   body's background so it matches both Design (#f0f0f0) and Play (#2F2F2F)
+   modes, dots included. Height is set dynamically to the hero's bottom. */
+#header-mask {
+  display: none; /* mobile only — enabled in the max-width:500px media query */
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 0;
+  z-index: 2;
+  background-color: inherit;
+  background-image: inherit;
+  background-size: inherit;
+  background-position: 0 0;
+  pointer-events: none;
+  /* Fade out toward the bottom so content emerges softly instead of being
+     cut off by a hard edge. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+}
+
 
 body.play-mode .hero {
 }
@@ -492,6 +514,63 @@ body.play-mode .hero-big-design { font-weight:300; }
 body.play-mode #canvasResetBtn { opacity:0 !important; pointer-events:none !important; }
 /* Hide the canvas Reset button whenever a folder/project overlay is open */
 #proj-overlay.show ~ #canvasResetBtn { opacity:0 !important; pointer-events:none !important; }
+/* Mobile: Me Board + canvas elements position override */
+@media (max-width: 500px) {
+  .honor-board-wrap {
+    top: 1182px !important;
+    left: 102px !important;
+    transform: rotate(2deg) scale(0.82) !important;
+    transform-origin: top left !important;
+  }
+  .me-photo-wrap {
+    top: 1270px !important;
+    left: 70px !important;
+  }
+  /* Keep Me photo in the same spot when entering Play mode on mobile */
+  body.play-mode .me-photo-wrap {
+    transform: none !important;
+  }
+  /* Hot coffee a bit higher in Play mode on mobile */
+  body.play-mode .hotcoffe-wrap {
+    transform: translateY(20px) !important;
+  }
+  /* gog lower in Play mode on mobile */
+  body.play-mode .gog-wrap {
+    transform: translate(80px, 10px) !important;
+  }
+  #about-comment {
+    top: 1234px !important;
+    left: 250px !important;
+  }
+  .gog-wrap {
+    top: 1170px !important;
+    left: 285px !important;
+  }
+  .swim-wrap {
+    top: 1455px !important;
+    left: 15px !important;
+  }
+  .hotcoffe-wrap {
+    top: 1100px !important;
+    left: -39px !important;
+  }
+}
+/* Mobile: move Reset button to bottom center */
+@media (max-width: 500px) {
+  #canvasResetBtn {
+    top: auto !important;
+    bottom: 32px !important;
+    right: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) translateY(12px) !important;
+  }
+  #canvasResetBtn.show {
+    transform: translateX(-50%) translateY(0) !important;
+  }
+  #canvasResetBtn:active {
+    transform: translateX(-50%) scale(0.96) !important;
+  }
+}
 .role-line { font-size:24px; color:#555; font-weight:400; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .role-tag {
   background:#1a1a1a; color:#fff5a3;
@@ -802,15 +881,17 @@ body.play-mode .proj-note-card p { color: rgba(255,255,255,0.78) !important; }
 .mobile-folder-scroll.closing { opacity: 0; }
 .mobile-folder-img {
   width: 100%; max-width: 360px;
+  flex-shrink: 0;
   border-radius: 20px; overflow: hidden;
   box-shadow: 0 10px 30px rgba(0,0,0,0.16);
-  opacity: 0; transform: translateY(26px);
+  opacity: 0; transform: translateY(26px) rotate(var(--rot, 0deg));
   transition: opacity 0.4s ease, transform 0.5s cubic-bezier(.34,1.4,.5,1);
 }
-.mobile-folder-img.in { opacity: 1; transform: none; }
+.mobile-folder-img.in { opacity: 1; transform: rotate(var(--rot, 0deg)); }
 .mobile-folder-img img { display: block; width: 100%; height: auto; }
 .mobile-folder-note {
   width: 100%; max-width: 360px;
+  flex-shrink: 0;
   background: #fff; border-radius: 18px; padding: 18px 20px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.10);
 }
@@ -1979,6 +2060,17 @@ body.play-mode .btn-instagram:hover::before { box-shadow: 0 0 0 2px rgba(160,80,
   .hero {
     transform: scale(0.45) !important;
     transform-origin: top center !important;
+    top: 50px !important;
+  }
+
+  /* Push all canvas content down a bit on mobile */
+  #canvas {
+    top: 60px !important;
+  }
+
+  /* Header backdrop — mobile only */
+  #header-mask {
+    display: block !important;
   }
 
   .folder {
@@ -2020,6 +2112,7 @@ body.play-mode .btn-instagram:hover::before { box-shadow: 0 0 0 2px rgba(160,80,
   /* Hero name — single line */
   .hero-big-name {
     white-space: nowrap !important;
+    font-size: 130px !important;
   }
 
   /* Hide contact buttons */
@@ -2044,18 +2137,56 @@ body.play-mode .btn-instagram:hover::before { box-shadow: 0 0 0 2px rgba(160,80,
     transform: translateX(-50%) !important;
   }
 
-  /* Play cards — smaller & closer on mobile */
+  /* Play cards — stacked vertically, one per row on mobile */
   .play-card-wrap {
     transform-origin: top left !important;
+    left: 30px !important;
   }
   body.play-mode .play-card-wrap {
-    transform: scale(0.72) !important;
+    transform: scale(0.78) !important;
   }
-  .play-card-wrap-2 { left: 193px !important; }
-  .play-card-wrap-3 { left: 386px !important; }
-  .play-card-wrap-4 { left: 579px !important; }
-  .play-card-wrap-5 { left: 193px !important; }
-  .play-card-wrap-6 { left: 386px !important; }
+  .play-card-wrap   { top: 238px !important; left: 50px !important; }
+  .play-card-wrap-2 { top: 198px !important; left: 263px !important; }
+  .play-card-wrap-3 { top: 520px !important; left: 50px !important; }
+  .play-card-wrap-4 { top: 480px !important; left: 263px !important; }
+  .play-card-wrap-5 { top: 802px !important; left: 50px !important; }
+  .play-card-wrap-6 { top: 762px !important; left: 263px !important; }
+
+  /* Header: enlarge "Hello, I'm" on mobile + nudge left */
+  .hero-new .hero-line:first-child .hero-small {
+    font-size: 33px !important;
+    transform: translateY(3px) !important;
+  }
+  /* Header: lift "Hello, I'm" + name up a touch on mobile */
+  .hero-new .hero-line:nth-child(1),
+  .hero-new .hero-line:nth-child(2) {
+    transform: translateY(-16px) !important;
+  }
+  /* Header: stack "I switch between" centered on top, with Design/toggle/Craft below */
+  .hero-new .hero-line:last-child {
+    flex-wrap: wrap !important;
+    transform: translateY(-12px) !important;
+  }
+  .hero-new .hero-line:last-child .hero-small {
+    flex-basis: 100% !important;
+    text-align: center !important;
+    font-size: 33px !important;
+  }
+  /* Header: bigger toggle pill on mobile (uniform scale keeps the Lottie overlay
+     aligned — changing width/height alters aspect ratio and shows a stray line) */
+  .hero-toggle-pill {
+    transform: scale(1.44) !important;
+    transform-origin: center !important;
+    margin: 0 32px !important;
+  }
+
+  /* Card 2 (Speaker) + Card 6 (Woodsy Shelf): hover video appears on the LEFT */
+  .play-card-inner-2 .play-card-video {
+    left: -340px !important;
+  }
+  .play-card-inner-6 .play-card-video {
+    left: -320px !important;
+  }
 }
 </style>
 </head>
@@ -2125,7 +2256,7 @@ body.play-mode .btn-instagram:hover::before { box-shadow: 0 0 0 2px rgba(160,80,
   <div id="f6-svg-wrapper" class="fsv-wrapper"></div>
   <div class="folder-label">
     <h3>Tap</h3>
-    <p>Digital Business Card App</p>
+    <p>Sr Product Designer</p>
   </div>
 </div>
 
@@ -2136,7 +2267,7 @@ body.play-mode .btn-instagram:hover::before { box-shadow: 0 0 0 2px rgba(160,80,
   <div id="f7-svg-wrapper" class="fsv-wrapper"></div>
   <div class="folder-label">
     <h3>Jahez</h3>
-    <p>Food Delivery Service</p>
+    <p>Sr Product Designer</p>
   </div>
 </div>
 
@@ -3170,6 +3301,8 @@ function openFolder(folder) {
       if (!preview.img) return;
       const card = document.createElement('div');
       card.className = 'mobile-folder-img';
+      // slight random tilt (between -2 and +2 deg) for a hand-placed feel
+      card.style.setProperty('--rot', (Math.random() * 4 - 2).toFixed(2) + 'deg');
       const im = document.createElement('img');
       im.src = preview.img;
       im.draggable = false;
@@ -3199,7 +3332,7 @@ function openFolder(folder) {
     linkBtn.target = '_blank';
     linkBtn.rel = 'noopener noreferrer';
     linkBtn.textContent = proj.linkText || 'Check the full project';
-    linkBtn.style.cssText = 'display:inline-flex;align-items:center;gap:8px;background:#1a1a1a;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:14px 26px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,0.18);margin-top:4px;';
+    linkBtn.style.cssText = 'flex-shrink:0;display:inline-flex;align-items:center;gap:8px;background:#1a1a1a;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:14px 26px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,0.18);margin-top:4px;';
     scroller.appendChild(linkBtn);
 
     document.body.appendChild(scroller);
@@ -3830,6 +3963,13 @@ makeDraggable(document.getElementById('cv-pdf-card'));
 
     // Measure by LAYOUT (offsetLeft/offsetWidth) — immune to entrance/hover
     // transforms so the target is stable even while cards are animating in.
+    // On mobile the play cards are scaled to 0.78 with transform-origin:top-left,
+    // so their visual width is offsetWidth*0.78 (left edge stays put). Account for
+    // that, otherwise centering over-counts the right side and shifts cards left.
+    // Mobile shrinks both folders (design mode, 0.72) and play cards (0.78) with
+    // transform-origin:top-left, so account for their real visual width.
+    const _isMobile = window.matchMedia('(max-width: 500px)').matches;
+    const cardScale = _isMobile ? (isPlay ? 0.78 : 0.72) : 1;
     let minL = Infinity, maxR = -Infinity;
     measureEls.forEach(el => {
       const cs = getComputedStyle(el);
@@ -3838,7 +3978,7 @@ makeDraggable(document.getElementById('cv-pdf-card'));
       if (!isPlay && parseFloat(cs.opacity) < 0.05) return;
       if (el.offsetWidth === 0 && el.offsetHeight === 0) return;
       const l = el.offsetLeft;
-      const r = el.offsetLeft + el.offsetWidth;
+      const r = el.offsetLeft + el.offsetWidth * cardScale;
       if (l < minL) minL = l;
       if (r > maxR) maxR = r;
     });
@@ -3941,8 +4081,20 @@ document.querySelectorAll('.canvas-img').forEach(makeDraggable);
 document.querySelectorAll('.play-card-inner').forEach(function(inner) {
   var vid = inner.querySelector('.play-card-video');
   if (!vid) return;
-  inner.addEventListener('mouseenter', function() { vid.play(); });
+  // Make sure the video source is ready, then play
+  function ensureAndPlay() {
+    if (vid.dataset.src && !vid.getAttribute('src')) {
+      vid.src = vid.dataset.src;
+      vid.load();
+    }
+    var p = vid.play();
+    if (p && p.catch) p.catch(function(){});
+  }
+  // Desktop: hover
+  inner.addEventListener('mouseenter', ensureAndPlay);
   inner.addEventListener('mouseleave', function() { vid.pause(); vid.currentTime = 0; });
+  // Mobile / touch: tap to play (sticky-hover reveals it, but play() needs a real gesture)
+  inner.addEventListener('touchstart', ensureAndPlay, { passive: true });
 });
 document.querySelector('.me-photo-wrap') && makeDraggable(document.querySelector('.me-photo-wrap'));
 document.querySelectorAll('.graduate-wrap').forEach(makeDraggable);
@@ -6682,6 +6834,32 @@ function sidebarOpenFolder(id) {
 
   ov.addEventListener('click', function(e) { if (e.target === ov) closeOverlay(); });
   document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeOverlay(); });
+})();
+</script>
+
+<script>
+/* Header backdrop: full-width opaque band behind the fixed hero so scrolling
+   canvas content vanishes under it. Height tracks the hero's actual bottom so
+   it adapts to mobile/desktop and the entrance animation automatically. */
+(function() {
+  var mask = document.createElement('div');
+  mask.id = 'header-mask';
+  document.body.appendChild(mask);
+  function fit() {
+    // Don't measure mid-entrance — the hero is scaled up during the intro
+    // animation, which would over-size the mask and cover the first folders.
+    if (document.body.classList.contains('intro')) return;
+    var hero = document.querySelector('.hero');
+    if (!hero) return;
+    var b = hero.getBoundingClientRect().bottom;
+    mask.style.height = Math.max(0, Math.round(b) + 30) + 'px';
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('load', function() { setTimeout(fit, 100); });
+  // Re-fit whenever the body class flips (intro removed, Design⇄Play toggle)
+  new MutationObserver(fit).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  // Fallbacks in case the class observer misses (fonts/layout settle)
+  setTimeout(fit, 2350); setTimeout(fit, 3000);
 })();
 </script>
 
