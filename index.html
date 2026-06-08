@@ -91,6 +91,52 @@ body.play-mode #canvas {
    (z-index:2, in DOM after it) but below the hero (z-index:3). Inherits the
    body's background so it matches both Design (#f0f0f0) and Play (#2F2F2F)
    modes, dots included. Height is set dynamically to the hero's bottom. */
+/* First-load hint: a WhatsApp-style chat popup telling visitors the canvas is
+   draggable, then it fades away on its own. */
+#drag-hint {
+  position: fixed;
+  top: 24px; left: 24px;
+  z-index: 9997;
+  display: flex; align-items: center; gap: 9px;
+  background: #262626;
+  /* chat-bubble corners: sharper top-left where the little tail sits */
+  border-radius: 4px 15px 15px 15px;
+  padding: 10px 15px 10px 12px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 6px 18px rgba(0,0,0,0.18);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px; font-weight: 600; color: #ffffff;
+  white-space: nowrap; pointer-events: none;
+  opacity: 0; transform: translateY(-8px) scale(0.96);
+  transform-origin: top left;
+  transition: opacity 0.35s ease, transform 0.4s cubic-bezier(.34,1.4,.64,1);
+}
+#drag-hint.in { opacity: 1; transform: none; }
+/* little speech-bubble tail at the top-left, like an incoming chat message */
+#drag-hint::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -7px;
+  width: 8px; height: 14px;
+  background: #262626;
+  clip-path: polygon(100% 0, 100% 100%, 0 0);
+}
+#drag-hint .dh-emoji { display: inline-flex; animation: dh-wiggle 1.4s ease-in-out infinite; transform-origin: 60% 80%; }
+#drag-hint .dh-emoji svg { width: 18px; height: 18px; display: block; }
+#drag-hint .dh-sub { color: #9a9a9a; font-weight: 400; }
+@keyframes dh-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-16deg); }
+  60% { transform: rotate(12deg); }
+}
+body.play-mode #drag-hint {
+  background: #3C3C3C; color: #fff;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 10px 28px rgba(0,0,0,0.32);
+}
+body.play-mode #drag-hint::before { background: #3C3C3C; }
+@media (max-width: 768px) {
+  #drag-hint { display: none !important; }
+}
+
 #header-mask {
   display: none; /* mobile only — enabled in the max-width:500px media query */
   position: fixed;
@@ -3934,8 +3980,16 @@ makeDraggable(document.getElementById('cv-pdf-card'));
     document.body.classList.remove('panning');
   });
 
-  // Show reset button on scroll/wheel
-  document.addEventListener('wheel', () => {
+  // Mouse wheel / trackpad scrolls the canvas up/down (and sideways)
+  document.addEventListener('wheel', (e) => {
+    // Let scrollable UI panels keep their own wheel behaviour
+    if (e.target.closest('#sidebar, .figma-sidebar, .fc-body, .note-resume, .mobile-folder-scroll, #proj-overlay, #resume-overlay')) return;
+    // Don't pan the canvas while a project folder overlay is open
+    if (overlay && overlay.classList.contains('show')) return;
+    canvas.style.transition = 'none';
+    panY -= e.deltaY;
+    panX -= e.deltaX;
+    canvas.style.transform = `translate(${panX}px,${panY}px)`;
     const rb = document.getElementById('canvasResetBtn');
     if (rb) rb.classList.add('show');
   }, { passive: true });
@@ -6860,6 +6914,43 @@ function sidebarOpenFolder(id) {
   new MutationObserver(fit).observe(document.body, { attributes: true, attributeFilter: ['class'] });
   // Fallbacks in case the class observer misses (fonts/layout settle)
   setTimeout(fit, 2350); setTimeout(fit, 3000);
+})();
+</script>
+
+<script>
+/* First-load "drag experience" hint — appears once the intro settles, then
+   fades out on its own (and the moment the visitor starts dragging). */
+(function() {
+  var hint = document.createElement('div');
+  hint.id = 'drag-hint';
+  hint.innerHTML = '<span class="dh-emoji">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M18 11.5V9a2 2 0 0 0-2-2 2 2 0 0 0-2 2"/>' +
+    '<path d="M14 10V8a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"/>' +
+    '<path d="M10 9.9V9a2 2 0 0 0-2-2 2 2 0 0 0-2 2v5"/>' +
+    '<path d="M6 14a2 2 0 0 0-2-2 2 2 0 0 0-2 2"/>' +
+    '<path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-4a8 8 0 0 1-8-8 2 2 0 1 1 4 0"/>' +
+    '</svg></span>' +
+    '<span>Drag Anywhere <span class="dh-sub">— move anything around!</span></span>';
+  document.body.appendChild(hint);
+
+  var shown = false, gone = false;
+  function show() { if (gone || shown) return; shown = true; hint.classList.add('in'); }
+  function hide() {
+    if (gone) return;
+    gone = true;
+    hint.classList.remove('in');
+    setTimeout(function() { if (hint.parentNode) hint.remove(); }, 600);
+  }
+
+  // Appear almost immediately on load
+  setTimeout(show, 350);
+  // Fade away on its own a few seconds later
+  setTimeout(hide, 5300);
+  // ...or as soon as the visitor starts dragging / panning something
+  document.addEventListener('pointerdown', function(e) {
+    if (e.target.closest('.folder, .canvas-img, .note, .sticky, #canvas')) hide();
+  }, true);
 })();
 </script>
 
